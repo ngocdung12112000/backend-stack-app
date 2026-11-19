@@ -13,4 +13,6 @@ dotnet run --project services/catalog/src/Catalog.Api
 docker build -f services/catalog/Dockerfile -t stackshop/catalog:dev .   # context = repo root
 ```
 
-Still to do: architecture test, `dotnet new` template, gateway, backend compose, CI, api-client.
+- `tests/Architecture.Tests`: csproj-based rules (services never reference each other, building blocks never reference services, Domain/Application/Infrastructure layer direction). New services are picked up automatically.
+
+Still to do: `dotnet new` template, gateway, backend compose, CI, api-client.
