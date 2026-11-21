@@ -15,7 +15,9 @@
     <PackageVersion Include="Serilog.AspNetCore" Version="8.0.3" />
     <!-- API -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-    <!-- CQRS (MediatR v12 is the last free line) -->
+    <!-- Gateway -->
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.2.0" />
+    <!-- CQRS(MediatR v12 is the last free line) -->
     <PackageVersion Include="MediatR" Version="12.4.1" />
     <!-- Tests -->
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />

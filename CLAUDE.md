@@ -17,4 +17,9 @@ docker build -f services/catalog/Dockerfile -t stackshop/catalog:dev .   # conte
 
 - `tools/templates/stackshop-service`: `dotnet new stackshop-service -n Ordering -o services/ordering` (installed via `dotnet new install tools/templates/stackshop-service`). `pwsh tools/new-service.ps1 -Name Ordering` does both and adds the projects to the root sln. If PowerShell blocks the script (execution policy), run the two `dotnet` commands by hand.
 
-Still to do: gateway, backend compose, CI, api-client.
+- `services/gateway`: YARP (`Gateway.Api`, `Gateway.Tests`, `Gateway.sln`, Dockerfile). Routes in `appsettings.json` under `ReverseProxy`; `/api/v1/products/**` -> catalog, inbound `X-User-*` headers stripped. Catalog default address is `http://localhost:5001/`; compose overrides it to `http://catalog:8080/`.
+- Gateway Swagger UI: `http://localhost:5000/swagger`. Each service's `swagger.json` is proxied at `/docs/<service>/swagger.json` (a `docs-<service>` route in `appsettings.json`) and listed in `UseSwaggerUI` in `Program.cs`. When adding a service, add both. It is not gated by environment yet, so disable or restrict it before exposing the gateway publicly.
+- `docker-compose.yml`: catalog + gateway (gateway on host `:5000`), joins the external `stackshop` network created by `stackshop-infra/local/compose.yml`. Start infra first.
+- Running locally without Docker: `ASPNETCORE_URLS=http://localhost:5001 dotnet run --no-launch-profile --project services/catalog/src/Catalog.Api`, same with `:5000` for the gateway. (`--no-launch-profile` is needed because catalog has a launchSettings.json.)
+
+Still to do: CI, api-client.

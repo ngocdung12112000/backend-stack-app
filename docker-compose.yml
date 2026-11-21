@@ -1,0 +1,26 @@
+# Runs the .NET services. Third-party infra lives in stackshop-infra/local/compose.yml,
+# which creates the "stackshop" network this file joins.
+name: stackshop-backend
+
+networks:
+  default:
+    name: stackshop
+    external: true
+
+services:
+  catalog:
+    build:
+      context: .
+      dockerfile: services/catalog/Dockerfile
+    image: stackshop/catalog:dev
+    expose: ["8080"]
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    image: stackshop/gateway:dev
+    ports: ["5000:8080"]
+    environment:
+      ReverseProxy__Clusters__catalog__Destinations__primary__Address: http://catalog:8080/
+    depends_on: [catalog]
