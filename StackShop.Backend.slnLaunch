@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Gateway + Catalog",
+    "Projects": [
+      {
+        "Path": "services\\catalog\\src\\Catalog.Api\\Catalog.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "services\\gateway\\src\\Gateway.Api\\Gateway.Api.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
