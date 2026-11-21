@@ -1,6 +1,6 @@
 {
   "name": "@ngocdung12112000/api-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Typed StackShop API client generated from the backend OpenAPI documents.",
   "license": "UNLICENSED",
   "type": "module",
