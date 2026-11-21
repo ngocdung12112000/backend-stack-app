@@ -22,4 +22,10 @@ docker build -f services/catalog/Dockerfile -t stackshop/catalog:dev .   # conte
 - `docker-compose.yml`: catalog + gateway (gateway on host `:5000`), joins the external `stackshop` network created by `stackshop-infra/local/compose.yml`. Start infra first.
 - Running locally without Docker: `ASPNETCORE_URLS=http://localhost:5001 dotnet run --no-launch-profile --project services/catalog/src/Catalog.Api`, same with `:5000` for the gateway. (`--no-launch-profile` is needed because catalog has a launchSettings.json.)
 
-Still to do: CI, api-client.
+- `.github/workflows/ci.yml`: `detect` (changed services; shared code such as building-blocks, contracts, Directory.*.props marks all as changed; uses git diff + jq, not dorny/paths-filter, so new services need no workflow edit) -> `architecture` (always) -> `service` matrix per changed service (restore, `dotnet format --verify-no-changes`, build, test + coverage) -> `ci-ok` (single required check). No integration tests or Testcontainers yet. Not run on GitHub yet; `actionlint` is not installed locally.
+
+- OpenAPI: `bash tools/generate-openapi.sh` writes `contracts/openapi/<service>.json` (Swashbuckle CLI from `.config/dotnet-tools.json`; the gateway is skipped). Commit the snapshot with any API change; `publish-client.yml` fails if it is stale. A service needs `SwaggerDoc("v1", ...)` and `.Produces<T>()` on endpoints for useful types.
+- `clients/api-client`: `@ngocdung12112000/api-client` (openapi-typescript + openapi-fetch). `npm ci && npm run build` generates `src/generated` (gitignored) and compiles to `dist`. Usage: `createApiClient({ baseUrl: "http://localhost:5000" }).catalog.GET("/api/v1/products")`. Version lives in `package.json`; bump it with the API change.
+- `.github/workflows/publish-client.yml`: on `main`, regenerate OpenAPI, check the snapshot, build, `npm publish` to GitHub Packages if that version is new (uses `GITHUB_TOKEN`; needs the GitHub repo, and the package scope must match the owner). Never run on GitHub yet.
+
+Phase 0 backend checklist is complete locally; remaining work is pushing to GitHub and watching the first CI and publish runs.

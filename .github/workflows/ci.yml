@@ -1,0 +1,125 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # Works out which services changed. A change to shared code (building-blocks, contracts,
+  # central build props, architecture tests, this workflow) marks every service as changed.
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.diff.outputs.services }}
+      any: ${{ steps.diff.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: diff
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+
+          all=$(ls -1 services)
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            changed_files=$(git ls-files)   # first push or unknown base: build everything
+          else
+            changed_files=$(git diff --name-only "$base" "${{ github.sha }}")
+          fi
+          echo "Changed files:"; echo "$changed_files"
+
+          if echo "$changed_files" | grep -Eq '^(building-blocks/|contracts/|Directory\.(Build|Packages)\.props|\.editorconfig|StackShop\.Backend\.sln|tests/Architecture\.Tests/|\.github/workflows/ci\.yml)'; then
+            selected="$all"
+          else
+            selected=$(for s in $all; do if echo "$changed_files" | grep -q "^services/$s/"; then echo "$s"; fi; done)
+          fi
+
+          json=$(echo "$selected" | { grep -v '^$' || true; } | jq -R . | jq -sc .)
+          [ "$json" = "[]" ] && any=false || any=true
+          echo "services=$json" >> "$GITHUB_OUTPUT"
+          echo "any=$any" >> "$GITHUB_OUTPUT"
+          echo "Services to build: $json"
+
+  # Dependency-direction rules (no cross-service references). Cheap, so it always runs.
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+      - run: dotnet test tests/Architecture.Tests -c Release
+
+  service:
+    needs: detect
+    if: needs.detect.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect.outputs.services) }}
+    name: service (${{ matrix.service }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Locate solution
+        id: sln
+        run: echo "path=$(ls services/${{ matrix.service }}/*.sln)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        run: dotnet restore ${{ steps.sln.outputs.path }}
+
+      - name: Format check
+        run: dotnet format ${{ steps.sln.outputs.path }} --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build ${{ steps.sln.outputs.path }} -c Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test ${{ steps.sln.outputs.path }} -c Release --no-build
+          --collect:"XPlat Code Coverage" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.service }}
+          path: TestResults
+          if-no-files-found: ignore
+
+  # Single required status check for branch protection.
+  ci-ok:
+    if: always()
+    needs: [detect, architecture, service]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        run: |
+          echo '${{ toJson(needs) }}'
+          if echo '${{ join(needs.*.result, ' ') }}' | grep -Eq 'failure|cancelled'; then exit 1; fi
