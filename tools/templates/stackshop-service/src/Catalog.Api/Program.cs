@@ -1,5 +1,6 @@
 using BuildingBlocks.Observability;
 using BuildingBlocks.Security;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,7 +8,7 @@ builder.AddObservability("catalog");
 builder.Services.AddJwtValidation(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(o => o.SwaggerDoc("v1", new OpenApiInfo { Title = "Catalog API", Version = "v1" }));
 
 var app = builder.Build();
 

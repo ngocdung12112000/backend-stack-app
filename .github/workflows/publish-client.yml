@@ -1,0 +1,75 @@
+name: publish-client
+
+# Generates the TypeScript client from the OpenAPI snapshots and publishes
+# @ngocdung12112000/api-client to GitHub Packages. The version comes from
+# clients/api-client/package.json: bump it in the same PR as the API change
+# (breaking API change = major). If that version is already published, the publish step is skipped.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/**/src/**"
+      - "contracts/openapi/**"
+      - "clients/api-client/**"
+      - ".github/workflows/publish-client.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-client
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: "@ngocdung12112000"
+          cache: npm
+          cache-dependency-path: clients/api-client/package-lock.json
+
+      - name: Regenerate OpenAPI documents
+        run: bash tools/generate-openapi.sh
+
+      - name: Fail if the committed OpenAPI snapshot is stale
+        run: |
+          if ! git diff --exit-code -- contracts/openapi; then
+            echo "::error::contracts/openapi is out of date. Run 'bash tools/generate-openapi.sh' and commit the result."
+            exit 1
+          fi
+
+      - name: Build client
+        working-directory: clients/api-client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish if this version is new
+        working-directory: clients/api-client
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "$name@$version is already published. Bump the version in package.json to publish a new one."
+          else
+            npm publish
+          fi
