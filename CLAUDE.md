@@ -15,4 +15,6 @@ docker build -f services/catalog/Dockerfile -t stackshop/catalog:dev .   # conte
 
 - `tests/Architecture.Tests`: csproj-based rules (services never reference each other, building blocks never reference services, Domain/Application/Infrastructure layer direction). New services are picked up automatically.
 
-Still to do: `dotnet new` template, gateway, backend compose, CI, api-client.
+- `tools/templates/stackshop-service`: `dotnet new stackshop-service -n Ordering -o services/ordering` (installed via `dotnet new install tools/templates/stackshop-service`). `pwsh tools/new-service.ps1 -Name Ordering` does both and adds the projects to the root sln. If PowerShell blocks the script (execution policy), run the two `dotnet` commands by hand.
+
+Still to do: gateway, backend compose, CI, api-client.

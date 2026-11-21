@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "StackShop",
+  "classifications": ["StackShop", "Microservice", "Web API"],
+  "identity": "StackShop.Service",
+  "name": "StackShop microservice",
+  "shortName": "stackshop-service",
+  "description": "Clean Architecture .NET 8 service: Domain, Application, Infrastructure, Api, tests, Dockerfile and its own solution.",
+  "tags": { "language": "C#", "type": "project" },
+  "sourceName": "Catalog",
+  "preferNameDirectory": false,
+  "symbols": {
+    "nameLower": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "lowerCase",
+      "replaces": "catalog",
+      "fileRename": "catalog"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        { "exclude": ["**/bin/**", "**/obj/**", "**/.vs/**", ".template.config/**", "README.md"] }
+      ]
+    }
+  ],
+  "postActions": []
+}
