@@ -7,6 +7,9 @@ networks:
     name: stackshop
     external: true
 
+volumes:
+  identity-keys:   # DEV ONLY: holds the generated RS256 signing key so restarts keep tokens valid
+
 services:
   catalog:
     build:
@@ -14,6 +17,33 @@ services:
       dockerfile: services/catalog/Dockerfile
     image: stackshop/catalog:dev
     expose: ["8080"]
+
+  identity:
+    build:
+      context: .
+      dockerfile: services/identity/Dockerfile
+    image: stackshop/identity:dev
+    expose: ["8080"]
+    environment:
+      ConnectionStrings__Identity: Server=mysql;Port=3306;Database=identity;User=identity;Password=identity
+      Redis__ConnectionString: redis:6379
+      Email__Host: mailpit
+      Email__Port: "1025"
+      Auth__FrontendBaseUrl: http://localhost:3000
+      # DEV ONLY. Generates an RSA key on first start and keeps it on the identity-keys volume.
+      # In Kubernetes the key comes from a Secret (Signing__PrivateKeyPem or a mounted Signing__PrivateKeyPath) and GenerateIfMissing stays false.
+      Signing__GenerateIfMissing: "true"
+      Signing__PrivateKeyPath: /keys/identity-signing.pem
+      # Local convenience; production runs the EF migration Job instead.
+      Database__MigrateOnStartup: "true"
+    volumes:
+      - identity-keys:/keys
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
 
   gateway:
     build:
@@ -23,4 +53,11 @@ services:
     ports: ["5000:8080"]
     environment:
       ReverseProxy__Clusters__catalog__Destinations__primary__Address: http://catalog:8080/
-    depends_on: [catalog]
+      ReverseProxy__Clusters__identity__Destinations__primary__Address: http://identity:8080/
+      Jwt__JwksUrl: http://identity:8080/.well-known/jwks.json
+      Redis__ConnectionString: redis:6379
+    depends_on:
+      catalog:
+        condition: service_started
+      identity:
+        condition: service_healthy

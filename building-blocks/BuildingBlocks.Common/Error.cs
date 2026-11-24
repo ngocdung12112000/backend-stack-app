@@ -1,6 +1,6 @@
 namespace BuildingBlocks.Common;
 
-public enum ErrorType { Validation, NotFound, Conflict, Unauthorized, Forbidden, Failure }
+public enum ErrorType { Validation, NotFound, Conflict, Unauthorized, Forbidden, Locked, TooManyRequests, Failure }
 
 /// <summary>Service-prefixed error code, e.g. INVENTORY_INSUFFICIENT_STOCK. Maps to RFC 7807 ProblemDetails.</summary>
 public sealed record Error(string Code, string Message, ErrorType Type = ErrorType.Failure)
@@ -10,4 +10,8 @@ public sealed record Error(string Code, string Message, ErrorType Type = ErrorTy
     public static Error NotFound(string code, string message) => new(code, message, ErrorType.NotFound);
     public static Error Validation(string code, string message) => new(code, message, ErrorType.Validation);
     public static Error Conflict(string code, string message) => new(code, message, ErrorType.Conflict);
+    public static Error Unauthorized(string code, string message) => new(code, message, ErrorType.Unauthorized);
+    public static Error Forbidden(string code, string message) => new(code, message, ErrorType.Forbidden);
+    public static Error Locked(string code, string message) => new(code, message, ErrorType.Locked);
+    public static Error TooManyRequests(string code, string message) => new(code, message, ErrorType.TooManyRequests);
 }

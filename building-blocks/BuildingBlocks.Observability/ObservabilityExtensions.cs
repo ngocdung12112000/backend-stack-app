@@ -12,7 +12,7 @@ namespace BuildingBlocks.Observability;
 public static class ObservabilityExtensions
 {
     /// <summary>Serilog, OpenTelemetry metrics/traces, and liveness/readiness health checks.</summary>
-    public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder, string serviceName)
+    public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder, string serviceName, params string[] meters)
     {
         builder.Host.UseSerilog((ctx, cfg) => cfg
             .ReadFrom.Configuration(ctx.Configuration)
@@ -26,6 +26,7 @@ public static class ObservabilityExtensions
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddRuntimeInstrumentation()
+                .AddMeter(meters)
                 .AddPrometheusExporter())
             .WithTracing(t => t
                 .AddAspNetCoreInstrumentation()

@@ -6,6 +6,11 @@ cd "$(dirname "$0")/.."
 
 dotnet tool restore
 
+# The Swagger CLI boots each app to read its OpenAPI document. Dummy settings let services that validate
+# configuration at start-up (identity) boot; no connection is opened and nothing is written.
+export ConnectionStrings__Identity="Server=localhost;Database=identity;User=openapi;Password=openapi"
+export Signing__GenerateIfMissing=true
+
 for api in services/*/src/*.Api; do
   svc=$(basename "$(dirname "$(dirname "$api")")")
   name=$(basename "$api")

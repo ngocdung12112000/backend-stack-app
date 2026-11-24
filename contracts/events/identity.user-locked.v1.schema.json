@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docs.stackshop.local/events/identity.user-locked.v1.schema.json",
+  "title": "identity.user-locked.v1",
+  "description": "Published when an admin locks a user.",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "source",
+    "occurredAt",
+    "data"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Message id; consumers dedupe on it (Inbox)."
+    },
+    "type": {
+      "const": "identity.user-locked.v1"
+    },
+    "source": {
+      "const": "identity"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "causationId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "traceparent": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "userId",
+        "lockedBy",
+        "lockedAt"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "userId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "lockedBy": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "lockedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

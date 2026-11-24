@@ -19,6 +19,7 @@ public class ServiceBoundaryTests
     {
         // Guards against the rules below passing vacuously.
         Assert.Contains(Projects.Value, p => p.Service == "catalog" && p.Layer == "Api");
+        Assert.Contains(Projects.Value, p => p.Service == "identity" && p.Layer == "Api");
     }
 
     [Fact]

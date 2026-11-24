@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docs.stackshop.local/events/identity.user-registered.v1.schema.json",
+  "title": "identity.user-registered.v1",
+  "description": "Published to identity.user-events (key = userId) after registration.",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "source",
+    "occurredAt",
+    "data"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Message id; consumers dedupe on it (Inbox)."
+    },
+    "type": {
+      "const": "identity.user-registered.v1"
+    },
+    "source": {
+      "const": "identity"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "causationId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "traceparent": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "userId",
+        "email"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "userId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "fullName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}
