@@ -10,6 +10,8 @@ dotnet tool restore
 # configuration at start-up (identity) boot; no connection is opened and nothing is written.
 export ConnectionStrings__Identity="Server=localhost;Database=identity;User=openapi;Password=openapi"
 export Signing__GenerateIfMissing=true
+export ConnectionStrings__Catalog="mongodb://localhost:27017"
+export Mongo__CreateIndexesOnStartup=false
 
 for api in services/*/src/*.Api; do
   svc=$(basename "$(dirname "$(dirname "$api")")")

@@ -12,8 +12,10 @@
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="8.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.24" />
+    <PackageVersion Include="MongoDB.Driver" Version="2.30.0" />
     <PackageVersion Include="MailKit" Version="4.16.0" />
     <PackageVersion Include="FluentValidation" Version="11.11.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
@@ -34,6 +36,7 @@
     <!-- Tests (FluentAssertions stays on 6.x: 8+ is commercial) -->
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="Testcontainers.MongoDb" Version="4.1.0" />
     <PackageVersion Include="Testcontainers.MySql" Version="4.1.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="4.1.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.10.0" />

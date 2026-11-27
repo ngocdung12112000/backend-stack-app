@@ -17,6 +17,13 @@ services:
       dockerfile: services/catalog/Dockerfile
     image: stackshop/catalog:dev
     expose: ["8080"]
+    environment:
+      # MongoDB is a single-node replica set (rs0) in stackshop-infra; the replica set is needed for the Phase 2 outbox transactions.
+      ConnectionStrings__Catalog: mongodb://mongo:27017/?replicaSet=rs0
+      Mongo__Database: catalog
+      Redis__ConnectionString: redis:6379
+      # Admin endpoints validate the identity-issued JWT themselves (RS256 via JWKS); the gateway only forwards.
+      Jwt__JwksUrl: http://identity:8080/.well-known/jwks.json
 
   identity:
     build:

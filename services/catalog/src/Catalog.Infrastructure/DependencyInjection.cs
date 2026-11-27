@@ -1,25 +1,55 @@
-using Catalog.Application.Products;
-using Catalog.Domain;
+using BuildingBlocks.Security;
+using Catalog.Application.Abstractions;
+using Catalog.Infrastructure.Caching;
+using Catalog.Infrastructure.Persistence;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 
 namespace Catalog.Infrastructure;
 
 public static class DependencyInjection
 {
-    /// <summary>Phase 0: in-memory empty store. Replaced by MongoDB in F03.</summary>
-    public static IServiceCollection AddCatalogInfrastructure(this IServiceCollection services)
+    /// <summary>MongoDB (<c>ConnectionStrings:Catalog</c>, <c>Mongo:Database</c>) and Redis (<c>Redis:ConnectionString</c>).</summary>
+    public static IServiceCollection AddCatalogInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        services.AddSingleton<IProductRepository, InMemoryProductRepository>();
+        services.AddOptions<MongoOptions>()
+            .Configure(o =>
+            {
+                config.GetSection(MongoOptions.Section).Bind(o);
+                o.ConnectionString = config.GetConnectionString("Catalog") ?? o.ConnectionString;
+            })
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ConnectionString), "ConnectionStrings:Catalog (MongoDB) is required.")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Database), "Mongo:Database is required.")
+            .ValidateOnStart();
+
+        services.AddOptions<CatalogOptions>()
+            .Bind(config.GetSection(CatalogOptions.Section))
+            .Validate(o => o.ProductCacheMinutes > 0 && o.CategoryTreeCacheMinutes > 0 && o.ProductCacheJitterSeconds >= 0,
+                "Catalog cache durations must be positive.")
+            .Validate(o => o.Currency.Length == 3, "Catalog:Currency must be a 3-letter ISO code.")
+            .ValidateOnStart();
+
+        services.AddSingleton<IMongoClient>(sp =>
+        {
+            var settings = MongoClientSettings.FromConnectionString(sp.GetRequiredService<IOptions<MongoOptions>>().Value.ConnectionString);
+            settings.ApplicationName = "catalog";
+            settings.ServerSelectionTimeout = TimeSpan.FromSeconds(10);
+            return new MongoClient(settings);
+        });
+        services.AddSingleton<CatalogDb>();
+        services.AddHostedService<MongoIndexInitializer>();
+        services.AddSingleton<IProductRepository, ProductRepository>();
+        services.AddSingleton<ICategoryRepository, CategoryRepository>();
+        services.AddSingleton<IBrandRepository, BrandRepository>();
+
+        services.AddRedisConnection(config);
+        services.AddSingleton<ICatalogCache, RedisCatalogCache>();
+
+        services.AddHealthChecks()
+            .AddCheck<MongoReadinessCheck>("mongodb", tags: ["ready"])
+            .AddCheck<RedisReadinessCheck>("redis", tags: ["ready"]);
         return services;
     }
-}
-
-internal sealed class InMemoryProductRepository : IProductRepository
-{
-    private readonly List<Product> _products = [];
-
-    public Task<IReadOnlyList<Product>> ListAsync(int page, int pageSize, CancellationToken ct) =>
-        Task.FromResult<IReadOnlyList<Product>>(_products.Skip((page - 1) * pageSize).Take(pageSize).ToList());
-
-    public Task<long> CountAsync(CancellationToken ct) => Task.FromResult((long)_products.Count);
 }
