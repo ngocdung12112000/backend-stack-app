@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddDbContext<IdentityDb>(o => o.UseMySql(connectionString, ServerVersion));
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<IdentityDb>());
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IEmailTokenRepository, EmailTokenRepository>();

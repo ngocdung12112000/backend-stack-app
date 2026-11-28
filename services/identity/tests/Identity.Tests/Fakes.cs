@@ -10,10 +10,11 @@ using Microsoft.Extensions.Time.Testing;
 namespace Identity.Tests;
 
 /// <summary>In-memory implementation of every persistence port, so handlers run against real domain objects without a database.</summary>
-public sealed class FakeStore : IUserRepository, IRoleRepository, IRefreshTokenRepository, IEmailTokenRepository, IOutbox, IUnitOfWork
+public sealed class FakeStore : IUserRepository, IRoleRepository, IRefreshTokenRepository, IEmailTokenRepository, IAddressRepository, IOutbox, IUnitOfWork
 {
     public List<User> Users { get; } = [];
     public List<RefreshToken> RefreshTokens { get; } = [];
+    public List<Address> Addresses { get; } = [];
     public List<EmailToken> EmailTokens { get; } = [];
     public List<IntegrationEvent> Events { get; } = [];
 
@@ -22,6 +23,17 @@ public sealed class FakeStore : IUserRepository, IRoleRepository, IRefreshTokenR
 
     // IUnitOfWork
     public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
+    public Task<T> InTransactionAsync<T>(Func<Task<T>> work, CancellationToken ct = default) => work();
+
+    // IAddressRepository
+    public Task<IReadOnlyList<Address>> ListAsync(Guid userId, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<Address>>(Addresses.Where(a => a.UserId == userId).ToList());
+    public Task<AddressBook?> LoadForUpdateAsync(Guid userId, CancellationToken ct) =>
+        Task.FromResult(Users.Any(u => u.Id == userId && !u.IsDeleted)
+            ? new AddressBook(userId, Addresses.Where(a => a.UserId == userId).ToList())
+            : null);
+    public void Add(Address address) => Addresses.Add(address);
+    public void Remove(Address address) => Addresses.Remove(address);
 
     // IUserRepository
     public Task<User?> GetByIdAsync(Guid id, CancellationToken ct) => Task.FromResult(Users.FirstOrDefault(u => u.Id == id));

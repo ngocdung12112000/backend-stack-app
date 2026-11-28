@@ -18,6 +18,7 @@
     <PackageVersion Include="MongoDB.Driver" Version="2.30.0" />
     <PackageVersion Include="MailKit" Version="4.16.0" />
     <PackageVersion Include="FluentValidation" Version="11.11.0" />
+    <PackageVersion Include="libphonenumber-csharp" Version="8.13.52" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.1.2" />
     <!-- Observability -->

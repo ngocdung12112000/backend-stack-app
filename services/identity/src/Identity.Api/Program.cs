@@ -76,6 +76,7 @@ app.UseAuthorization();
 
 app.MapObservability();
 app.MapIdentityEndpoints();
+app.MapProfileEndpoints();
 
 app.Run();
 return 0;

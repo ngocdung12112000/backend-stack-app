@@ -7,6 +7,9 @@ public interface IUnitOfWork
 {
     /// <exception cref="UniqueConstraintViolationException">A unique index (e.g. users.normalized_email) rejected the write.</exception>
     Task SaveChangesAsync(CancellationToken ct = default);
+
+    /// <summary>Runs <paramref name="work"/> in one database transaction: committed when it returns, rolled back when it throws.</summary>
+    Task<T> InTransactionAsync<T>(Func<Task<T>> work, CancellationToken ct = default);
 }
 
 public sealed class UniqueConstraintViolationException(Exception inner)
@@ -24,6 +27,21 @@ public interface IUserRepository
     Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct);
     void Add(User user);
     Task<PagedResult<User>> ListAsync(string? search, string? role, UserStatus? status, int page, int pageSize, CancellationToken ct);
+}
+
+public interface IAddressRepository
+{
+    /// <summary>Read-only list of the user's addresses (not tracked, no lock).</summary>
+    Task<IReadOnlyList<Address>> ListAsync(Guid userId, CancellationToken ct);
+
+    /// <summary>
+    /// Locks the user row (SELECT ... FOR UPDATE, so it must run inside <see cref="IUnitOfWork.InTransactionAsync{T}"/>) and loads the
+    /// user's addresses as a tracked <see cref="AddressBook"/>. Concurrent writers for the same user queue on the lock, which keeps
+    /// the single-default and max-10 invariants race-free. Returns null when the user does not exist or is deleted.
+    /// </summary>
+    Task<AddressBook?> LoadForUpdateAsync(Guid userId, CancellationToken ct);
+    void Add(Address address);
+    void Remove(Address address);
 }
 
 public interface IRoleRepository

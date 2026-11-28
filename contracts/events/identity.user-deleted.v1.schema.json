@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docs.stackshop.local/events/identity.user-deleted.v1.schema.json",
+  "title": "identity.user-deleted.v1",
+  "description": "Published when a user deletes their account (F02 BR-06). Consumers anonymise their own copies of the user's data; the payload carries no PII.",
+  "type": "object",
+  "required": ["id", "type", "source", "occurredAt", "data"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid", "description": "Message id; consumers dedupe on it (Inbox)." },
+    "type": { "const": "identity.user-deleted.v1" },
+    "source": { "const": "identity" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "correlationId": { "type": ["string", "null"] },
+    "causationId": { "type": ["string", "null"] },
+    "traceparent": { "type": ["string", "null"] },
+    "data": {
+      "type": "object",
+      "required": ["userId", "deletedAt"],
+      "additionalProperties": true,
+      "properties": {
+        "userId": { "type": "string", "format": "uuid" },
+        "deletedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

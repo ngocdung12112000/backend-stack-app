@@ -132,6 +132,16 @@ public sealed class IdentityClient
         return _http.SendAsync(request);
     }
 
+    public Task<HttpResponseMessage> Patch(string path, object body, string? bearer = null) => SendJson(HttpMethod.Patch, path, body, bearer);
+    public Task<HttpResponseMessage> DeleteWithBody(string path, object body, string? bearer = null) => SendJson(HttpMethod.Delete, path, body, bearer);
+
+    private Task<HttpResponseMessage> SendJson(HttpMethod method, string path, object body, string? bearer)
+    {
+        var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
+        if (bearer is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+        return _http.SendAsync(request);
+    }
+
     private Task<HttpResponseMessage> Send(HttpMethod method, string path, string? bearer)
     {
         var request = new HttpRequestMessage(method, path);

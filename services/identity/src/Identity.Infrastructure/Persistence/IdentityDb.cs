@@ -37,6 +37,7 @@ public sealed class IdentityDb(DbContextOptions<IdentityDb> options) : DbContext
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<Address> Addresses => Set<Address>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailToken> EmailTokens => Set<EmailToken>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
@@ -60,12 +61,30 @@ public sealed class IdentityDb(DbContextOptions<IdentityDb> options) : DbContext
             e.Property(u => u.PasswordHash).HasMaxLength(512).IsRequired();
             e.Property(u => u.FullName).HasMaxLength(200);
             e.Property(u => u.Phone).HasMaxLength(30);
+            e.Property(u => u.AvatarAssetId);
             e.Property(u => u.Status).HasConversion<string>().HasColumnType("enum('Active','Locked','Deleted')");
             e.Property(u => u.RowVersion).IsConcurrencyToken();
             e.HasIndex(u => u.Email).IsUnique();
             e.HasIndex(u => u.NormalizedEmail).IsUnique();
             e.HasMany(u => u.Roles).WithOne().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
             e.Navigation(u => u.Roles).HasField("_roles").UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        b.Entity<Address>(e =>
+        {
+            e.ToTable("addresses");
+            e.HasKey(a => a.Id);
+            e.Property(a => a.RecipientName).HasMaxLength(100).IsRequired();
+            e.Property(a => a.Phone).HasMaxLength(30).IsRequired();
+            e.Property(a => a.Line1).HasMaxLength(200).IsRequired();
+            e.Property(a => a.Line2).HasMaxLength(200);
+            e.Property(a => a.Ward).HasMaxLength(100);
+            e.Property(a => a.District).HasMaxLength(100);
+            e.Property(a => a.City).HasMaxLength(100).IsRequired();
+            e.Property(a => a.CountryCode).HasColumnType("char(2)").IsRequired();
+            e.Property(a => a.PostalCode).HasMaxLength(20);
+            e.HasIndex(a => a.UserId);
+            e.HasOne<User>().WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<Role>(e =>
@@ -166,6 +185,14 @@ public sealed class IdentityDb(DbContextOptions<IdentityDb> options) : DbContext
         foreach (var entry in ChangeTracker.Entries<User>().Where(e => e.State == EntityState.Modified))
             entry.Entity.RowVersion++;
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    async Task<T> IUnitOfWork.InTransactionAsync<T>(Func<Task<T>> work, CancellationToken ct)
+    {
+        await using var tx = await Database.BeginTransactionAsync(ct);
+        var result = await work();
+        await tx.CommitAsync(ct);
+        return result;
     }
 
     async Task IUnitOfWork.SaveChangesAsync(CancellationToken ct)

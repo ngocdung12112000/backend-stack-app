@@ -10,7 +10,7 @@ namespace Identity.Application.Users;
 public static class UserMapping
 {
     public static UserProfile ToProfile(this User u) =>
-        new(u.Id, u.Email, u.FullName, u.Phone, u.EmailConfirmed, u.Status.ToString(), u.RoleNames, u.Permissions, u.CreatedAt);
+        new(u.Id, u.Email, u.FullName, u.Phone, u.EmailConfirmed, u.Status.ToString(), u.RoleNames, u.Permissions, u.CreatedAt, u.AvatarAssetId);
 }
 
 // ---------------------------------------------------------------- Profile

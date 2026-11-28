@@ -34,3 +34,11 @@ public sealed record UserLockedV1(Guid UserId, Guid LockedBy, DateTime LockedAt)
     public override string Type => EventType;
     public override object Data => new { userId = UserId, lockedBy = LockedBy, lockedAt = LockedAt };
 }
+
+/// <summary>BR-06: other services anonymise their copies (reviews show "Deleted user"). Carries no PII, only the id.</summary>
+public sealed record UserDeletedV1(Guid UserId, DateTime DeletedAt) : IdentityEvent(UserId)
+{
+    public const string EventType = "identity.user-deleted.v1";
+    public override string Type => EventType;
+    public override object Data => new { userId = UserId, deletedAt = DeletedAt };
+}

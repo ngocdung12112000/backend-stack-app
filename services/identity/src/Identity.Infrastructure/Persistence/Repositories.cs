@@ -44,6 +44,25 @@ internal sealed class UserRepository(IdentityDb db) : IUserRepository
     }
 }
 
+internal sealed class AddressRepository(IdentityDb db) : IAddressRepository
+{
+    public async Task<IReadOnlyList<Address>> ListAsync(Guid userId, CancellationToken ct) =>
+        await db.Addresses.AsNoTracking().Where(a => a.UserId == userId).ToListAsync(ct);
+
+    public async Task<AddressBook?> LoadForUpdateAsync(Guid userId, CancellationToken ct)
+    {
+        // Row lock on the owning user: concurrent address writers (and account deletion) for this user queue here until commit.
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT id FROM users WHERE id = {userId} FOR UPDATE", ct);
+        if (!await db.Users.AsNoTracking().AnyAsync(u => u.Id == userId && u.Status != UserStatus.Deleted, ct)) return null;
+
+        var existing = await db.Addresses.Where(a => a.UserId == userId).ToListAsync(ct);
+        return new AddressBook(userId, existing);
+    }
+
+    public void Add(Address address) => db.Addresses.Add(address);
+    public void Remove(Address address) => db.Addresses.Remove(address);
+}
+
 internal sealed class RoleRepository(IdentityDb db) : IRoleRepository
 {
     public async Task<Role> GetRequiredAsync(string name, CancellationToken ct) =>

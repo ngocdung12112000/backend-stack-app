@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using BuildingBlocks.Common;
 using FluentValidation;
+using Identity.Domain;
 using MediatR;
 
 namespace Identity.Application;
@@ -43,6 +44,8 @@ public static class IdentityErrors
     public static readonly Error InvalidCurrentPassword = Error.Validation("IDENTITY_INVALID_CURRENT_PASSWORD", "The current password is incorrect.");
     public static readonly Error UserNotFound = Error.NotFound("IDENTITY_USER_NOT_FOUND", "User not found.");
     public static readonly Error SessionNotFound = Error.NotFound("IDENTITY_SESSION_NOT_FOUND", "Session not found.");
+    public static readonly Error AddressNotFound = Error.NotFound("IDENTITY_ADDRESS_NOT_FOUND", "Address not found.");
+    public static readonly Error AddressLimitReached = Error.Conflict("IDENTITY_ADDRESS_LIMIT_REACHED", $"You can store at most {AddressBook.MaxAddresses} addresses.");
     public static readonly Error CannotLockSelf = Error.Conflict("IDENTITY_CANNOT_LOCK_SELF", "You cannot lock your own account.");
     public static Error UnknownRole(string role) => Error.Validation("IDENTITY_UNKNOWN_ROLE", $"Unknown role '{role}'.");
 }
@@ -103,4 +106,4 @@ public sealed record UserSummary(Guid Id, string Email, string? FullName, IReadO
 
 public sealed record UserProfile(
     Guid Id, string Email, string? FullName, string? Phone, bool EmailConfirmed, string Status,
-    IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions, DateTime CreatedAt);
+    IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions, DateTime CreatedAt, Guid? AvatarAssetId = null);

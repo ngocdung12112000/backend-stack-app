@@ -157,9 +157,10 @@ public class IdentityRouteConfigTests(WebApplicationFactory<Program> factory) : 
     [InlineData("identity-auth", "/api/v1/auth/{**catch-all}", "anonymous")]
     [InlineData("identity-jwks", "/.well-known/jwks.json", "anonymous")]
     [InlineData("identity-users", "/api/v1/users/{**catch-all}", "default")]
+    [InlineData("identity-addresses", "/api/v1/addresses/{**catch-all}", "default")]
     [InlineData("identity-admin-users", "/api/v1/admin/users/{**catch-all}", "default")]
     [InlineData("docs-identity", "/docs/identity/swagger.json", "anonymous")]
-    public void F01_Config_RoutesIdentityPaths_ToIdentityCluster(string routeId, string path, string policy)
+    public void F01_F02_Config_RoutesIdentityPaths_ToIdentityCluster(string routeId, string path, string policy)
     {
         var route = Assert.Single(Config.Routes, r => r.RouteId == routeId);
 
@@ -172,6 +173,7 @@ public class IdentityRouteConfigTests(WebApplicationFactory<Program> factory) : 
     [Theory]
     [InlineData("identity-auth")]
     [InlineData("identity-users")]
+    [InlineData("identity-addresses")]
     [InlineData("identity-admin-users")]
     public void F01_Config_IdentityRoutes_StripInboundUserHeaders(string routeId)
     {

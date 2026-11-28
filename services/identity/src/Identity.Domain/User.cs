@@ -19,6 +19,8 @@ public sealed class User
     public string PasswordHash { get; private set; } = string.Empty;
     public string? FullName { get; private set; }
     public string? Phone { get; private set; }
+    /// <summary>Id of the avatar in the (future) media service; identity only stores the reference.</summary>
+    public Guid? AvatarAssetId { get; private set; }
     public bool EmailConfirmed { get; private set; }
     public UserStatus Status { get; private set; } = UserStatus.Active;
     public int FailedLoginCount { get; private set; }
@@ -70,6 +72,36 @@ public sealed class User
     public void RegisterSuccessfulLogin(DateTime now)
     {
         if (FailedLoginCount == 0 && LockoutEnd is null) return;
+        FailedLoginCount = 0;
+        LockoutEnd = null;
+        UpdatedAt = now;
+    }
+
+    /// <summary>US-02.1: null arguments leave a field unchanged; <paramref name="clearPhone"/> / <paramref name="clearAvatar"/> remove it.</summary>
+    public void UpdateProfile(string? fullName, string? phone, bool clearPhone, Guid? avatarAssetId, bool clearAvatar, DateTime now)
+    {
+        if (fullName is not null) FullName = fullName.Trim();
+        if (clearPhone) Phone = null;
+        else if (phone is not null) Phone = phone;
+        if (clearAvatar) AvatarAssetId = null;
+        else if (avatarAssetId is not null) AvatarAssetId = avatarAssetId;
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// BR-06: soft delete with anonymisation. The row stays (orders and reviews keep a stable user id), but nothing identifying
+    /// is left and the password hash is replaced by a value no password can ever match.
+    /// </summary>
+    public void MarkDeleted(string unusablePasswordHash, DateTime now)
+    {
+        Status = UserStatus.Deleted;
+        Email = $"deleted+{Id}@invalid";
+        NormalizedEmail = NormalizeEmail(Email);
+        PasswordHash = unusablePasswordHash;
+        FullName = null;
+        Phone = null;
+        AvatarAssetId = null;
+        EmailConfirmed = false;
         FailedLoginCount = 0;
         LockoutEnd = null;
         UpdatedAt = now;

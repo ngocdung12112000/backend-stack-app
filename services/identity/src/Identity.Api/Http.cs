@@ -74,7 +74,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         {
             case ValidationException v:
                 var errors = v.Errors
-                    .GroupBy(e => Camel(e.PropertyName))
+                    .GroupBy(e => Camel(FieldName(e.PropertyName)))
                     .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).Distinct().ToArray());
                 var code = v.Errors.Any(e => e.ErrorCode == IdentityErrors.WeakPasswordCode)
                     ? IdentityErrors.WeakPasswordCode
@@ -98,6 +98,9 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         await result.ExecuteAsync(ctx);
         return true;
     }
+
+    /// <summary>Commands wrap the request body in one property ("Address.Phone"); clients know the field as "phone".</summary>
+    private static string FieldName(string name) => name.StartsWith("Address.", StringComparison.Ordinal) ? name["Address.".Length..] : name;
 
     private static string Camel(string name) => string.IsNullOrEmpty(name) ? name : char.ToLowerInvariant(name[0]) + name[1..];
 }

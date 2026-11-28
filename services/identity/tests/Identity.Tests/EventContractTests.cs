@@ -14,6 +14,7 @@ public class EventContractTests
         new UserRegisteredV1(Id, "a@b.co", "Ann"),
         new PasswordResetRequestedV1(Id, "a@b.co", "token", Now),
         new UserLockedV1(Id, Guid.NewGuid(), Now),
+        new UserDeletedV1(Id, Now),
     };
 
     [Theory]
